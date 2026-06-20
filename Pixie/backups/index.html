@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pixie — a vintage-style online photobooth. Step inside, strike a pose, and keep your memories forever ♡">
+
+  <title>Pixie ♡ Online Photobooth</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎀</text></svg>">
+</head>
+<body>
+
+  <!-- ======== Soft Background Shapes ======== -->
+  <div class="bg-shapes" aria-hidden="true">
+    <div class="shape shape--blush"></div>
+    <div class="shape shape--blue"></div>
+    <div class="shape shape--rose"></div>
+  </div>
+
+  <!-- ======== Sparkle Particles ======== -->
+  <div class="sparkles" id="sparkles" aria-hidden="true"></div>
+
+  <!-- ======== Falling Petals ======== -->
+  <div class="bg-petals" id="petals" aria-hidden="true"></div>
+
+  <!-- ======== Floating Hearts ======== -->
+  <div class="bg-hearts" id="hearts" aria-hidden="true"></div>
+
+  <!-- ======== Gingham Pattern ======== -->
+  <div class="gingham-overlay" aria-hidden="true"></div>
+
+  <!-- ======== Decorative Stickers ======== -->
+  <div class="bg-deco" aria-hidden="true">
+    <span class="deco deco--1">🌸</span>
+    <span class="deco deco--2">🦋</span>
+    <span class="deco deco--3">🎀</span>
+    <span class="deco deco--4">✿</span>
+    <span class="deco deco--5">🌷</span>
+    <span class="deco deco--6">🦋</span>
+    <span class="deco deco--7">🌸</span>
+    <span class="deco deco--8">♡</span>
+  </div>
+
+  <!-- ======== Paper Texture Overlay ======== -->
+  <div class="texture-overlay" aria-hidden="true"></div>
+
+  <!-- ======== Flash Overlay ======== -->
+  <div class="flash-overlay" id="flash-overlay" aria-hidden="true"></div>
+
+  <!-- ======== Navigation ======== -->
+  <nav class="nav" id="main-nav">
+    <a class="nav__logo" href="#" id="nav-home">Pixie</a>
+    <ul class="nav__links">
+      <li>
+        <button class="nav__link" id="nav-memory-wall" type="button">
+          ♡ Memory Wall
+        </button>
+      </li>
+      <li>
+        <button class="nav__link" id="nav-boomerang" type="button">
+          ✿ Boomerang
+          <span class="nav__link-badge">Soon</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- ================================================================
+       SCREEN: Hero / Landing
+       ================================================================ -->
+  <main class="hero screen screen--active" id="hero-screen">
+
+    <!-- Title -->
+    <div class="hero__logo-wrap fade-up">
+      <h1 class="hero__title">
+        Pixie
+        <span class="hero__accent hero__accent--1" aria-hidden="true">♡</span>
+        <span class="hero__accent hero__accent--2" aria-hidden="true">✧</span>
+        <span class="hero__accent hero__accent--3" aria-hidden="true">♡</span>
+      </h1>
+      <div class="hero__flourish" aria-hidden="true">♡ ✧ ♡</div>
+    </div>
+
+    <!-- Tagline -->
+    <p class="hero__tagline fade-up">
+      Your cozy corner of the internet for picture-perfect memories.
+      <em>Strike a pose</em>, make it pretty, and keep it forever&nbsp;♡
+    </p>
+
+    <!-- Card -->
+    <div class="hero__card fade-up">
+      <button class="cta-btn" id="start-booth-btn" type="button">
+        <span class="cta-btn__icon">📸</span>
+        Step Inside
+      </button>
+      <div class="hero__features">
+        <span class="feature-pill">♡ Vintage Frames</span>
+        <span class="feature-pill">✿ Photo Strips</span>
+        <span class="feature-pill">✧ Share the Love</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="hero__footer fade-up">
+      Free forever · No sign-up · Made with love
+    </p>
+
+  </main>
+
+  <!-- ================================================================
+       SCREEN: Booth / Camera
+       ================================================================ -->
+  <section class="booth screen" id="booth-screen">
+
+    <!-- Header -->
+    <div class="booth__header">
+      <button class="booth__back-btn" id="booth-back-btn" type="button">
+        ← Back
+      </button>
+      <div class="booth__progress" id="booth-progress">
+        <div class="booth__dot" data-shot="0"></div>
+        <div class="booth__dot" data-shot="1"></div>
+        <div class="booth__dot" data-shot="2"></div>
+        <div class="booth__dot" data-shot="3"></div>
+      </div>
+    </div>
+
+    <!-- Camera Stage -->
+    <div class="booth__stage">
+      <div class="booth__frame" id="booth-frame">
+
+        <!-- Viewfinder (video + overlays) -->
+        <div class="booth__viewfinder">
+          <video id="webcam-video" autoplay playsinline muted></video>
+
+          <!-- Countdown Overlay -->
+          <div class="booth__countdown" id="countdown-overlay">
+            <span class="countdown__number" id="countdown-number"></span>
+          </div>
+
+          <!-- Camera Error State -->
+          <div class="booth__error" id="booth-error">
+            <span class="booth__error-icon">📷</span>
+            <p class="booth__error-text">We need camera access to capture your photos!</p>
+            <button class="booth__error-btn" id="retry-camera-btn" type="button">Try Again</button>
+          </div>
+        </div>
+
+        <!-- Status — in the polaroid bottom area -->
+        <p class="booth__status" id="booth-status">Press capture when you're ready!</p>
+
+      </div>
+    </div>
+
+    <!-- Capture Button -->
+    <button class="cta-btn booth__capture-btn" id="capture-btn" type="button">
+      <span class="cta-btn__icon">📸</span>
+      Capture
+    </button>
+
+    <!-- Hidden capture canvas -->
+    <canvas id="capture-canvas" style="display:none;"></canvas>
+  </section>
+
+  <!-- ================================================================
+       SCREEN: Results
+       ================================================================ -->
+  <section class="results screen" id="results-screen">
+
+    <h2 class="results__title">Your Photos Are Ready ♡</h2>
+
+    <div class="results__strip-wrap">
+      <canvas id="strip-canvas"></canvas>
+    </div>
+
+    <div class="results__actions">
+      <button class="cta-btn" id="retake-btn" type="button">
+        <span class="cta-btn__icon">🔄</span>
+        Retake
+      </button>
+      <button class="cta-btn cta-btn--outline" id="home-btn" type="button">
+        <span class="cta-btn__icon">🏠</span>
+        Home
+      </button>
+    </div>
+
+  </section>
+
+  <!-- Scripts -->
+  <script src="script.js"></script>
+</body>
+</html>
