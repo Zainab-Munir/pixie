@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pixie — a vintage, storybook online photobooth ♡">
+  <title>Pixie ♡ Online Photobooth</title>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Fonts: Elegant script (Parisienne) and clean rounded sans-serif (Quicksand) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- gifshot Library for Boomerang Mode (No worker CORS issue) -->
+  <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/dist/gifshot.min.js"></script>
+
+  <!-- qrcodejs Library for QR Code sharing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎀</text></svg>">
+</head>
+<body>
+
+  <!-- ======== Soft Background Scrapbook Overlays ======== -->
+  <div class="gingham-overlay" aria-hidden="true"></div>
+  <div class="sparkles" id="sparkles" aria-hidden="true"></div>
+  <div class="bg-petals" id="petals" aria-hidden="true"></div>
+  <div class="bg-hearts" id="hearts" aria-hidden="true"></div>
+
+  <!-- ======== Decorative Stickers ======== -->
+  <div class="bg-deco" aria-hidden="true">
+    <span class="deco deco--1">🌸</span>
+    <span class="deco deco--2">🦋</span>
+    <span class="deco deco--3">🎀</span>
+    <span class="deco deco--4">✿</span>
+    <span class="deco deco--5">🌷</span>
+    <span class="deco deco--6">🦋</span>
+    <span class="deco deco--7">🌸</span>
+    <span class="deco deco--8">♡</span>
+  </div>
+
+  <div class="texture-overlay" aria-hidden="true"></div>
+  <div class="flash-overlay" id="flash-overlay" aria-hidden="true"></div>
+
+  <!-- ======== Navigation Bar (Pink, outside screen transitions) ======== -->
+  <nav class="nav" id="main-nav">
+    <a class="nav__logo" href="#" id="nav-home">Pixie</a>
+    <div class="nav__right">
+      <ul class="nav__links">
+        <li><button class="nav__link" id="nav-memory-wall" type="button">Memory Wall</button></li>
+        <li><button class="nav__link" id="nav-boomerang" type="button">Boomerang 🔄</button></li>
+        <li><button class="nav__link" id="nav-about" type="button">About</button></li>
+      </ul>
+      <button class="nav__cta-btn" id="nav-start-btn" type="button">Start</button>
+    </div>
+  </nav>
+
+  <!-- ================================================================
+       SCREEN: Hero / Landing Screen (with Hero & Showcase Sections)
+       ================================================================ -->
+  <main class="screen screen--active" id="hero-screen">
+    
+    <!-- Hero Header with Illustrated Backdrop -->
+    <header class="hero">
+      <div class="hero__backdrop" style="background-image: url('assets/hero-bg.png');"></div>
+      <div class="hero__overlay"></div>
+      <div class="hero__content">
+        <h1 class="hero__title">Pixie</h1>
+        <p class="hero__tagline">Your cozy corner of the internet for picture-perfect memories ♡</p>
+      </div>
+    </header>
+
+    <!-- Showcase Section (Cream Background) -->
+    <section class="showcase">
+      <h2 class="showcase__title">Step Inside Our Cozy Vintage Booth...</h2>
+      
+      <!-- Polaroid Showcase Grid -->
+      <div class="showcase__polaroids">
+        <div class="polaroid polaroid--1">
+          <div class="polaroid__img-wrap">
+            <img src="assets/sample1.jpg" alt="Vintage Photo of Friends">
+          </div>
+          <p class="polaroid__caption">sweet memories ♡</p>
+        </div>
+        
+        <div class="polaroid polaroid--2">
+          <div class="polaroid__img-wrap">
+            <img src="assets/sample2.jpg" alt="Vintage Portrait Photo">
+          </div>
+          <p class="polaroid__caption">say cheese! 📸</p>
+        </div>
+      </div>
+
+      <!-- Main CTA Area -->
+      <div class="showcase__cta">
+        <button class="cta-btn" id="start-booth-btn" type="button">
+          <span class="cta-btn__icon">📸</span>
+          Start Booth
+        </button>
+      </div>
+      
+      <p class="showcase__footer">Free forever · No sign-up · Made with love</p>
+    </section>
+
+  </main>
+
+  <!-- ================================================================
+       SCREEN: Booth / Camera Capture Screen
+       ================================================================ -->
+  <section class="booth screen" id="booth-screen">
+    
+    <div class="booth__header">
+      <button class="booth__back-btn" id="booth-back-btn" type="button">
+        ← Back
+      </button>
+
+      <!-- Mode Selector Tab -->
+      <div class="booth__mode-toggle">
+        <button class="mode-tab active" id="mode-strip-tab" type="button">📸 Photo Strip</button>
+        <button class="mode-tab" id="mode-boomerang-tab" type="button">🔄 Boomerang</button>
+      </div>
+
+      <!-- Strip Length Toggle -->
+      <div class="booth__length-toggle" id="booth-length-toggle">
+        <span class="length-label">Strip Length:</span>
+        <button class="length-tab active" data-length="4" type="button">4 Shots</button>
+        <button class="length-tab" data-length="3" type="button">3 Shots</button>
+        <button class="length-tab" data-length="2" type="button">2 Shots</button>
+      </div>
+
+      <div class="booth__progress" id="booth-progress">
+        <div class="booth__dot" data-shot="0"></div>
+        <div class="booth__dot" data-shot="1"></div>
+        <div class="booth__dot" data-shot="2"></div>
+        <div class="booth__dot" data-shot="3"></div>
+      </div>
+    </div>
+
+    <!-- Viewfinder Polaroid Frame -->
+    <div class="booth__stage">
+      <div class="booth__frame" id="booth-frame">
+        <div class="booth__viewfinder">
+          <video id="webcam-video" autoplay playsinline muted></video>
+
+          <!-- Scanline Overlay (VHS filter) -->
+          <div class="viewfinder__scanlines" id="scanlines-overlay" aria-hidden="true"></div>
+
+          <!-- Vignette Overlay (Warm Glow filter) -->
+          <div class="viewfinder__vignette" id="vignette-overlay" aria-hidden="true"></div>
+
+          <!-- REC Indicator (Boomerang Mode active capture) -->
+          <div class="viewfinder__rec" id="rec-indicator" aria-hidden="true">
+            <span class="rec__dot"></span> REC
+          </div>
+
+          <!-- Countdown Text Overlay -->
+          <div class="booth__countdown" id="countdown-overlay">
+            <span class="countdown__number" id="countdown-number"></span>
+          </div>
+
+          <!-- Webcam Denied Error State -->
+          <div class="booth__error" id="booth-error">
+            <span class="booth__error-icon">📷</span>
+            <p class="booth__error-text">We need camera access to capture your photos!</p>
+            <button class="booth__error-btn" id="retry-camera-btn" type="button">Try Again</button>
+          </div>
+        </div>
+
+        <p class="booth__status" id="booth-status">Press capture when you're ready!</p>
+      </div>
+    </div>
+
+    <!-- Filters Row -->
+    <div class="booth__filters-wrap">
+      <button class="filter-surprise-btn" id="filter-surprise-btn" type="button" title="Surprise Me! 🎲">
+        🎲
+      </button>
+      <div class="booth__filters" id="filters-container">
+        <button class="filter-opt active" data-filter="none" type="button">
+          <span class="filter-opt__preview filter-opt__preview--none"></span>
+          <span class="filter-opt__label">Normal</span>
+        </button>
+        <button class="filter-opt" data-filter="y2k" type="button">
+          <span class="filter-opt__preview filter-opt__preview--y2k"></span>
+          <span class="filter-opt__label">Y2K Chrome</span>
+        </button>
+        <button class="filter-opt" data-filter="vhs" type="button">
+          <span class="filter-opt__preview filter-opt__preview--vhs"></span>
+          <span class="filter-opt__label">VHS Grain</span>
+        </button>
+        <button class="filter-opt" data-filter="bw" type="button">
+          <span class="filter-opt__preview filter-opt__preview--bw"></span>
+          <span class="filter-opt__label">B&W Film</span>
+        </button>
+        <button class="filter-opt" data-filter="warm" type="button">
+          <span class="filter-opt__preview filter-opt__preview--warm"></span>
+          <span class="filter-opt__label">Warm Glow</span>
+        </button>
+        <button class="filter-opt" data-filter="sepia" type="button">
+          <span class="filter-opt__preview filter-opt__preview--sepia"></span>
+          <span class="filter-opt__label">Sepia Polaroid</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Capture Trigger -->
+    <button class="cta-btn booth__capture-btn" id="capture-btn" type="button">
+      <span class="cta-btn__icon">📸</span>
+      Capture
+    </button>
+
+    <canvas id="capture-canvas" style="display:none;"></canvas>
+  </section>
+
+  <!-- ================================================================
+       SCREEN: Results Screen
+       ================================================================ -->
+  <section class="results screen" id="results-screen">
+    <h2 class="results__title">Your Photos Are Ready ♡</h2>
+
+    <div class="results__grid">
+      <!-- Left Column: Photo Strip / GIF Preview wrapper -->
+      <div class="results__strip-wrap" style="flex-direction: column; align-items: center; gap: 16px;">
+        <div class="results__canvas-wrap" id="canvas-wrap">
+          <canvas id="strip-canvas"></canvas>
+          <canvas id="doodle-canvas" style="position: absolute; inset: 0; pointer-events: none; z-index: 5;"></canvas>
+          <img id="gif-preview" alt="Looping Boomerang GIF" style="display: none;">
+          <!-- Sticker Container Overlay -->
+          <div class="results__stickers-overlay" id="stickers-overlay"></div>
+        </div>
+
+        <!-- Frame Style Picker -->
+        <div class="frame-picker" id="frame-picker-container">
+          <span class="frame-picker__label">Frame Style:</span>
+          <div class="frame-picker__swatches">
+            <button class="frame-swatch active" data-style="white" style="background-color: #FFFDF8; border: 1px solid rgba(140, 47, 69, 0.15);" type="button" title="White Paper"></button>
+            <button class="frame-swatch" data-style="cream" style="background-color: #FAF1E4;" type="button" title="Cozy Cream"></button>
+            <button class="frame-swatch" data-style="pink" style="background-color: #F4C9D3;" type="button" title="Blush Pink"></button>
+            <button class="frame-swatch" data-style="blue" style="background-color: #BFD7E8;" type="button" title="Dusty Blue"></button>
+            <button class="frame-swatch" data-style="rose" style="background-color: #8C2F45;" type="button" title="Deep Rose"></button>
+            <button class="frame-swatch" data-style="gradient" style="background: linear-gradient(135deg, #FADCE4, #BFD7E8);" type="button" title="Pastel Gradient"></button>
+            <button class="frame-swatch" data-style="pattern" style="background-image: radial-gradient(#F4C9D3 20%, transparent 20%), radial-gradient(#F4C9D3 20%, transparent 20%); background-size: 8px 8px; background-position: 0 0, 4px 4px; background-color: #FAF1E4;" type="button" title="Polka Dot Pattern"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Aura Reading Card -->
+      <div class="aura-card" id="aura-card">
+        <!-- Morphing Aura background blob -->
+        <div class="aura-card__blob-wrap" aria-hidden="true">
+          <div class="aura-card__blob" id="aura-blob"></div>
+        </div>
+
+        <div class="aura-card__content">
+          <span class="aura-card__subtitle">Your Aura Reading</span>
+          <h3 class="aura-card__name" id="aura-name">Cosmic Indigo</h3>
+
+          <div class="aura-card__score-wrap">
+            <span class="aura-card__score-num" id="aura-score">0</span>
+            <span class="aura-card__score-label">Aura Score</span>
+          </div>
+
+          <p class="aura-card__verdict" id="aura-verdict">certified delulu but thriving</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decoration Tool Drawer (Only used for Photo Strip mode) -->
+    <div class="decorate-toolbar" id="decorate-toolbar">
+      <div class="decorate-toolbar__tabs">
+        <button class="decorate-tab active" id="tab-stickers" type="button">✨ Stickers</button>
+        <button class="decorate-tab" id="tab-doodles" type="button">✏️ Doodles</button>
+      </div>
+
+      <!-- Sticker Tray Panel -->
+      <div class="decorate-panel active" id="panel-stickers">
+        <div class="sticker-tray">
+          <button class="sticker-btn" data-emoji="⭐" type="button">⭐</button>
+          <button class="sticker-btn" data-emoji="💖" type="button">💖</button>
+          <button class="sticker-btn" data-emoji="🎀" type="button">🎀</button>
+          <button class="sticker-btn" data-emoji="✨" type="button">✨</button>
+          <button class="sticker-btn" data-emoji="🌸" type="button">🌸</button>
+          <button class="sticker-btn" data-emoji="🦋" type="button">🦋</button>
+          <button class="sticker-btn" data-emoji="🧸" type="button">🧸</button>
+          <button class="sticker-btn" data-emoji="🍒" type="button">🍒</button>
+          <button class="sticker-btn" data-emoji="🍦" type="button">🍦</button>
+          <button class="sticker-btn" data-emoji="🌈" type="button">🌈</button>
+        </div>
+      </div>
+
+      <!-- Freehand Doodling Pen Panel -->
+      <div class="decorate-panel" id="panel-doodles">
+        <div class="doodle-controls">
+          <button class="doodle-tool-btn" id="doodle-draw-btn" type="button">✏️ Draw Pen</button>
+          <div class="doodle-colors">
+            <button class="color-swatch active" data-color="#8C2F45" style="background-color: #8C2F45;" type="button" title="Deep Rose"></button>
+            <button class="color-swatch" data-color="#E0578B" style="background-color: #E0578B;" type="button" title="Hot Pink"></button>
+            <button class="color-swatch" data-color="#BFD7E8" style="background-color: #BFD7E8;" type="button" title="Dusty Blue"></button>
+            <button class="color-swatch" data-color="#D4A25F" style="background-color: #D4A25F;" type="button" title="Gold"></button>
+            <button class="color-swatch" data-color="#3A1A24" style="background-color: #3A1A24;" type="button" title="Charcoal"></button>
+          </div>
+          <button class="doodle-action-btn" id="doodle-undo-btn" type="button">↩️ Undo</button>
+          <button class="doodle-action-btn" id="doodle-clear-btn" type="button">🧹 Clear</button>
+        </div>
+
+        <div class="doodle-stamps-title">Doodle Stamps</div>
+        <div class="doodle-stamps-tray">
+          <button class="stamp-btn" data-stamp="flower" type="button" title="Flower Sprig">
+            <svg viewBox="0 0 100 100"><path d="M50,70 Q45,85 50,95" fill="none" stroke="#8C2F45" stroke-width="4" stroke-linecap="round"/><path d="M48,80 Q35,75 42,70" fill="none" stroke="#8C2F45" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="30" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="50" cy="54" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="38" cy="42" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="62" cy="42" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="50" cy="42" r="12" fill="#FAF1E4" stroke="#8C2F45" stroke-width="3"/><circle cx="46" cy="40" r="1.5" fill="#8C2F45"/><circle cx="54" cy="40" r="1.5" fill="#8C2F45"/><path d="M47,45 Q50,48 53,45" fill="none" stroke="#8C2F45" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <button class="stamp-btn" data-stamp="heart" type="button" title="Swirly Heart">
+            <svg viewBox="0 0 100 100"><path d="M50,35 C50,35 43,20 30,25 C15,30 20,53 50,80 C80,53 85,30 70,25 C57,20 50,35 50,35" fill="#F4C9D3" stroke="#8C2F45" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M50,45 C50,45 46,36 38,39 C29,42 32,56 50,70 C68,56 71,42 62,39 C54,36 50,45 50,45" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/><path d="M72,20 L74,25 L79,27 L74,29 L72,34 L70,29 L65,27 L70,25 Z" fill="#FFFDF8" stroke="#8C2F45" stroke-width="1.5"/></svg>
+          </button>
+          <button class="stamp-btn" data-stamp="ribbon" type="button" title="Ribbon Banner">
+            <svg viewBox="0 0 100 100"><path d="M50,45 C35,30 15,35 25,55 C35,70 45,55 50,45" fill="#FADCE4" stroke="#8C2F45" stroke-width="3.5" stroke-linejoin="round"/><path d="M50,45 C65,30 85,35 75,55 C65,70 55,55 50,45" fill="#FADCE4" stroke="#8C2F45" stroke-width="3.5" stroke-linejoin="round"/><path d="M42,52 L25,82 L38,80 L44,57" fill="#E8AEBF" stroke="#8C2F45" stroke-width="3" stroke-linejoin="round"/><path d="M58,52 L75,82 L62,80 L56,57" fill="#E8AEBF" stroke="#8C2F45" stroke-width="3" stroke-linejoin="round"/><path d="M50,42 C50,42 47,36 42,38 C37,40 38,48 50,56 C62,48 63,40 58,38 C53,36 50,42 50,42" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/></svg>
+          </button>
+          <button class="stamp-btn" data-stamp="star" type="button" title="Star Burst">
+            <svg viewBox="0 0 100 100"><path d="M50,15 L53,38 L76,41 L53,44 L50,67 L47,44 L24,41 L47,38 Z" fill="#FFFDF8" stroke="#8C2F45" stroke-width="4" stroke-linejoin="round"/><path d="M78,55 L79.5,65 L89.5,66.5 L79.5,68 L78,78 L76.5,68 L66.5,66.5 L76.5,65 Z" fill="#BFD7E8" stroke="#8C2F45" stroke-width="2.5" stroke-linejoin="round"/><path d="M25,50 L26,57 L33,58.5 L26,60 L25,67 L24,60 L17,58.5 L24,57 Z" fill="#FADCE4" stroke="#8C2F45" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="stamp-btn" data-stamp="underline" type="button" title="Wavy Underline">
+            <svg viewBox="0 0 100 60"><path d="M10,20 Q30,5 50,20 T90,20" fill="none" stroke="#8C2F45" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="20" x2="43" y2="38" stroke="#8C2F45" stroke-width="2"/><line x1="50" y1="20" x2="57" y2="38" stroke="#8C2F45" stroke-width="2"/><circle cx="43" cy="38" r="6" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/><circle cx="57" cy="38" r="6" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/></svg>
+          </button>
+          <button class="stamp-btn" data-stamp="cloud" type="button" title="Small Cloud">
+            <svg viewBox="0 0 100 100"><path d="M25,65 C15,65 10,55 20,45 C15,30 35,20 45,30 C55,15 75,20 75,35 C85,35 90,45 85,55 C90,65 75,70 70,65 C60,75 35,75 25,65 Z" fill="#FFFDF8" stroke="#BFD7E8" stroke-width="3" stroke-linejoin="round"/><path d="M40,43 Q43,46 46,43" fill="none" stroke="#8C2F45" stroke-width="2" stroke-linecap="round"/><path d="M54,43 Q57,46 60,43" fill="none" stroke="#8C2F45" stroke-width="2" stroke-linecap="round"/><circle cx="36" cy="46" r="3" fill="#F4C9D3"/><circle cx="64" cy="46" r="3" fill="#F4C9D3"/><path d="M30,72 L32,77 A2,2 0 0,1 28,77 Z" fill="#BFD7E8" stroke="#8C2F45" stroke-width="1.5"/><path d="M50,75 L52,80 A2,2 0 0,1 48,80 Z" fill="#FADCE4" stroke="#8C2F45" stroke-width="1.5"/><path d="M70,72 L72,77 A2,2 0 0,1 68,77 Z" fill="#BFD7E8" stroke="#8C2F45" stroke-width="1.5"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Footer -->
+    <div class="results__actions">
+      <button class="cta-btn cta-btn--export" id="download-strip-btn" type="button">
+        <span class="cta-btn__icon">💾</span>
+        Download Strip
+      </button>
+      <button class="cta-btn cta-btn--export" id="download-gif-btn" style="display: none;" type="button">
+        <span class="cta-btn__icon">💾</span>
+        Download GIF
+      </button>
+      <button class="cta-btn cta-btn--export" id="share-qr-btn" type="button">
+        <span class="cta-btn__icon">📱</span>
+        Share via QR
+      </button>
+      <button class="cta-btn cta-btn--outline" id="retake-btn" type="button">
+        <span class="cta-btn__icon">🔄</span>
+        Retake
+      </button>
+      <button class="cta-btn cta-btn--outline" id="home-btn" type="button">
+        <span class="cta-btn__icon">🏠</span>
+        Home
+      </button>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SCREEN: Memory Wall
+       ================================================================ -->
+  <section class="wall screen" id="wall-screen">
+    <h2 class="wall__title">Memory Wall 🎀</h2>
+    <p class="wall__subtitle">A cozy collection of your captured moments ♡</p>
+
+    <!-- Gallery Grid Wrapper -->
+    <div class="wall__container">
+      <div class="wall__grid" id="wall-grid"></div>
+
+      <!-- Empty State -->
+      <div class="wall__empty" id="wall-empty">
+        <span class="wall__empty-icon">🧸</span>
+        <p class="wall__empty-text">No memories saved yet...</p>
+        <p class="wall__empty-subtext">Step inside the booth and capture some magic! ♡</p>
+        <button class="cta-btn" id="wall-start-btn" type="button">Go to Booth</button>
+      </div>
+    </div>
+
+    <!-- Actions Footer -->
+    <div class="wall__actions">
+      <button class="cta-btn cta-btn--outline" id="wall-back-btn" type="button">
+        ← Home
+      </button>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       SCREEN: About Page
+       ================================================================ -->
+  <section class="about screen" id="about-screen">
+    <h2 class="about__title">About Pixie 🎀</h2>
+    <p class="about__subtitle">our cozy digital scrapbooking corner ♡</p>
+
+    <div class="about__container">
+      <!-- Origin Blurb (Styled like a Polaroid) -->
+      <div class="about__polaroid-wrap">
+        <!-- Twinkling Star decorative SVG accent -->
+        <div class="about__deco-svg about__deco-svg--star">
+          <svg viewBox="0 0 100 100" width="50" height="50"><path d="M50,15 L53,38 L76,41 L53,44 L50,67 L47,44 L24,41 L47,38 Z" fill="#FFFDF8" stroke="#8C2F45" stroke-width="4" stroke-linejoin="round"/><path d="M78,55 L79.5,65 L89.5,66.5 L79.5,68 L78,78 L76.5,68 L66.5,66.5 L76.5,65 Z" fill="#BFD7E8" stroke="#8C2F45" stroke-width="2.5" stroke-linejoin="round"/><path d="M25,50 L26,57 L33,58.5 L26,60 L25,67 L24,60 L17,58.5 L24,57 Z" fill="#FADCE4" stroke="#8C2F45" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        </div>
+        <!-- Ribbon Bow decorative SVG accent -->
+        <div class="about__deco-svg about__deco-svg--ribbon">
+          <svg viewBox="0 0 100 100" width="50" height="50"><path d="M50,45 C35,30 15,35 25,55 C35,70 45,55 50,45" fill="#FADCE4" stroke="#8C2F45" stroke-width="3.5" stroke-linejoin="round"/><path d="M50,45 C65,30 85,35 75,55 C65,70 55,55 50,45" fill="#FADCE4" stroke="#8C2F45" stroke-width="3.5" stroke-linejoin="round"/><path d="M42,52 L25,82 L38,80 L44,57" fill="#E8AEBF" stroke="#8C2F45" stroke-width="3" stroke-linejoin="round"/><path d="M58,52 L75,82 L62,80 L56,57" fill="#E8AEBF" stroke="#8C2F45" stroke-width="3" stroke-linejoin="round"/><path d="M50,42 C50,42 47,36 42,38 C37,40 38,48 50,56 C62,48 63,40 58,38 C53,36 50,42 50,42" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/></svg>
+        </div>
+        <!-- Flower decorative SVG accent -->
+        <div class="about__deco-svg about__deco-svg--flower">
+          <svg viewBox="0 0 100 100" width="45" height="45"><path d="M50,70 Q45,85 50,95" fill="none" stroke="#8C2F45" stroke-width="4" stroke-linecap="round"/><path d="M48,80 Q35,75 42,70" fill="none" stroke="#8C2F45" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="30" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="50" cy="54" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="38" cy="42" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="62" cy="42" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="50" cy="42" r="12" fill="#FAF1E4" stroke="#8C2F45" stroke-width="3"/><circle cx="46" cy="40" r="1.5" fill="#8C2F45"/><circle cx="54" cy="40" r="1.5" fill="#8C2F45"/><path d="M47,45 Q50,48 53,45" fill="none" stroke="#8C2F45" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        
+        <div class="about__polaroid polaroid">
+          <div class="about__polaroid-content">
+            <h3 class="about__story-title">how it started...</h3>
+            <p class="about__story-text">
+              Pixie was born out of pure main-character-energy and a deep love for vintage disposable cameras, glossy polaroid frames, and sticky scrapbooks. We wanted a cozy, warm space online to freeze time and capture vibes with friends.
+            </p>
+          </div>
+          <p class="polaroid__caption">built with love ♡</p>
+        </div>
+      </div>
+
+      <!-- Why Pixie? Section -->
+      <div class="about__why-section">
+        <h3 class="about__section-title">why pixie?</h3>
+        <!-- Wavy Underline accent -->
+        <div class="about__deco-svg about__deco-svg--underline">
+          <svg viewBox="0 0 100 60" width="80" height="48"><path d="M10,20 Q30,5 50,20 T90,20" fill="none" stroke="#8C2F45" stroke-width="4" stroke-linecap="round"/><line x1="50" y1="20" x2="43" y2="38" stroke="#8C2F45" stroke-width="2"/><line x1="50" y1="20" x2="57" y2="38" stroke="#8C2F45" stroke-width="2"/><circle cx="43" cy="38" r="6" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/><circle cx="57" cy="38" r="6" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/></svg>
+        </div>
+
+        <div class="about__why-grid-container">
+          <!-- Floating star on the left of grid -->
+          <div class="about__deco-svg about__deco-svg--star-left">
+            <svg viewBox="0 0 100 100" width="45" height="45"><path d="M50,15 L53,38 L76,41 L53,44 L50,67 L47,44 L24,41 L47,38 Z" fill="#FFFDF8" stroke="#8C2F45" stroke-width="4" stroke-linejoin="round"/><path d="M78,55 L79.5,65 L89.5,66.5 L79.5,68 L78,78 L76.5,68 L66.5,66.5 L76.5,65 Z" fill="#BFD7E8" stroke="#8C2F45" stroke-width="2.5" stroke-linejoin="round"/><path d="M25,50 L26,57 L33,58.5 L26,60 L25,67 L24,60 L17,58.5 L24,57 Z" fill="#FADCE4" stroke="#8C2F45" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          </div>
+          <!-- Floating flower on the right of grid -->
+          <div class="about__deco-svg about__deco-svg--flower-right">
+            <svg viewBox="0 0 100 100" width="45" height="45"><path d="M50,70 Q45,85 50,95" fill="none" stroke="#8C2F45" stroke-width="4" stroke-linecap="round"/><path d="M48,80 Q35,75 42,70" fill="none" stroke="#8C2F45" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="30" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="50" cy="54" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="38" cy="42" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="62" cy="42" r="12" fill="#FFFDF8" stroke="#8C2F45" stroke-width="3"/><circle cx="50" cy="42" r="12" fill="#FAF1E4" stroke="#8C2F45" stroke-width="3"/><circle cx="46" cy="40" r="1.5" fill="#8C2F45"/><circle cx="54" cy="40" r="1.5" fill="#8C2F45"/><path d="M47,45 Q50,48 53,45" fill="none" stroke="#8C2F45" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+
+          <div class="about__why-grid">
+            <div class="about__card">
+              <span class="about__card-emoji">🎀</span>
+              <h4>no app, no login</h4>
+              <p>just vibes. open the page, strike a pose, and snap. no annoying profiles or passwords to forget here!</p>
+            </div>
+            <div class="about__card">
+              <span class="about__card-emoji">🧸</span>
+              <h4>your business</h4>
+              <p>your memories stay on your device. local storage keeps them safe, and we never upload your face anywhere.</p>
+            </div>
+            <div class="about__card">
+              <span class="about__card-emoji">🌸</span>
+              <h4>free forever</h4>
+              <p>pinky promise! pixie is made purely to spread smiles and capture sweet memories with those you love.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rules Box -->
+      <div class="about__rules-wrap">
+        <!-- Sleepy Cloud decorative SVG accent -->
+        <div class="about__deco-svg about__deco-svg--cloud">
+          <svg viewBox="0 0 100 100" width="60" height="60"><path d="M25,65 C15,65 10,55 20,45 C15,30 35,20 45,30 C55,15 75,20 75,35 C85,35 90,45 85,55 C90,65 75,70 70,65 C60,75 35,75 25,65 Z" fill="#FFFDF8" stroke="#BFD7E8" stroke-width="3" stroke-linejoin="round"/><path d="M40,43 Q43,46 46,43" fill="none" stroke="#8C2F45" stroke-width="2" stroke-linecap="round"/><path d="M54,43 Q57,46 60,43" fill="none" stroke="#8C2F45" stroke-width="2" stroke-linecap="round"/><circle cx="36" cy="46" r="3" fill="#F4C9D3"/><circle cx="64" cy="46" r="3" fill="#F4C9D3"/><path d="M30,72 L32,77 A2,2 0 0,1 28,77 Z" fill="#BFD7E8" stroke="#8C2F45" stroke-width="1.5"/><path d="M50,75 L52,80 A2,2 0 0,1 48,80 Z" fill="#FADCE4" stroke="#8C2F45" stroke-width="1.5"/><path d="M70,72 L72,77 A2,2 0 0,1 68,77 Z" fill="#BFD7E8" stroke="#8C2F45" stroke-width="1.5"/></svg>
+        </div>
+
+        <div class="about__rules-box">
+          <div class="about__rules-header">
+            <span class="about__rules-emoji">✨</span>
+            <h3>fine print (but make it cute)</h3>
+          </div>
+          <ul class="about__rules-list">
+            <li>♡ pose like you are the main character</li>
+            <li>♡ draw goofy doodles, stick cute stamps, and thrive</li>
+            <li>♡ share strips with your besties (we made the QR codes super easy!)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="about__closing-wrap">
+        <!-- Heart decorative SVG accent -->
+        <div class="about__deco-svg about__deco-svg--heart">
+          <svg viewBox="0 0 100 100" width="45" height="45"><path d="M50,35 C50,35 43,20 30,25 C15,30 20,53 50,80 C80,53 85,30 70,25 C57,20 50,35 50,35" fill="#F4C9D3" stroke="#8C2F45" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M50,45 C50,45 46,36 38,39 C29,42 32,56 50,70 C68,56 71,42 62,39 C54,36 50,45 50,45" fill="#E0578B" stroke="#8C2F45" stroke-width="2"/><path d="M72,20 L74,25 L79,27 L74,29 L72,34 L70,29 L65,27 L70,25 Z" fill="#FFFDF8" stroke="#8C2F45" stroke-width="1.5"/></svg>
+        </div>
+        <p class="about__closing">so... what are you waiting for? go make some magic! ♡</p>
+      </div>
+    </div>
+
+    <!-- Actions Footer -->
+    <div class="about__actions">
+      <button class="cta-btn" id="about-start-btn" type="button">
+        <span class="cta-btn__icon">📸</span>
+        Start Booth
+      </button>
+      <button class="cta-btn cta-btn--outline" id="about-back-btn" type="button">
+        ← Home
+      </button>
+    </div>
+
+  </section>
+
+
+  <!-- ======== QR Code Share Modal ======== -->
+  <div class="modal" id="qr-modal" aria-hidden="true">
+    <div class="modal__overlay" id="qr-modal-overlay"></div>
+    <div class="modal__content polaroid">
+      <button class="modal__close" id="qr-modal-close" type="button" aria-label="Close modal">×</button>
+      <h3 class="modal__title">Share via QR ♡</h3>
+      <p class="modal__desc">Scan this with any phone camera to view the strip!</p>
+      <div class="modal__qr-container" id="qr-code-container" style="width: 200px; height: 200px;"></div>
+      <p class="modal__footer">Pixie Photobooth 🎀</p>
+    </div>
+  </div>
+
+<!-- ======== Shared Strip Receiver Modal ======== -->
+<div class="modal" id="shared-strip-modal" aria-hidden="true">
+  <div class="modal__overlay" id="shared-strip-overlay"></div>
+  <div class="modal__content polaroid">
+    <button class="modal__close" id="shared-strip-close" type="button" aria-label="Close">×</button>
+    <h3 class="modal__title">someone shared a strip with you ♡</h3>
+    <p class="modal__desc">Save it before it's gone! 🎀</p>
+    <img id="shared-strip-img" alt="Shared Pixie photo strip"
+      style="max-width:100%;border-radius:4px;margin:12px 0;display:block;box-shadow:0 4px 14px rgba(140,47,69,0.12);">
+    <button class="cta-btn cta-btn--export" id="shared-strip-save" type="button">
+      <span class="cta-btn__icon">💾</span>
+      Save Photo
+    </button>
+    <p class="modal__footer">Pixie Photobooth 🎀</p>
+  </div>
+</div>
+
+  <!-- Main JavaScript File -->
+  <script src="script.js"></script>
+</body>
+</html>
