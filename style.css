@@ -277,6 +277,24 @@ body {
   transform: translateY(-1px);
 }
 
+.nav__burger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: var(--clr-rose);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: transform var(--transition-fast);
+}
+.nav__burger:hover {
+  transform: scale(1.05);
+}
+.nav__burger:active {
+  transform: scale(0.95);
+}
+
 /* ============================================
    Screen Transitions / Architecture
    ============================================ */
@@ -1220,13 +1238,76 @@ body {
 @media (max-width: 768px) {
   .nav { padding: 14px 20px; }
   .nav__logo { font-size: 1.7rem; }
-  .nav__links { display: none; }
+  
+  .nav__burger {
+    display: block;
+  }
+  
+  .nav__links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--clr-blush);
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 2px solid rgba(140, 47, 69, 0.08);
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(140, 47, 69, 0.08);
+    z-index: 99;
+  }
+  .nav__links.active {
+    display: flex;
+  }
+  
   .hero { height: 350px; }
   .showcase { padding: 40px 16px 60px; }
   .showcase__polaroids { gap: 20px; }
   .polaroid { width: 230px; }
+  
+  /* Booth screen mobile adjustment */
+  .booth__header {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .booth__back-btn {
+    order: 1;
+  }
+  .booth__mode-toggle {
+    order: 2;
+  }
+  .booth__progress {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+  .booth__length-toggle {
+    order: 4;
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+  
+  /* Results screen mobile stack */
+  .results__grid {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
   .results__strip-wrap { max-width: 260px; }
-  .results__grid { gap: 24px; }
+  .frame-picker__swatches {
+    flex-wrap: wrap;
+  }
+
+  /* About screen mobile stack */
+  .about__why-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 /* ============================================
@@ -1376,6 +1457,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: pointer;
 }
 
 /* Hover Zoom and Glow effect */

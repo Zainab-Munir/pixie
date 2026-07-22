@@ -25,6 +25,9 @@ const PAUSE_BETWEEN_MS    = 1400;
 const BOOMERANG_FRAMES    = 12;
 const BOOMERANG_FPS_MS    = 120; // Time between frames
 
+// Cloud upload settings
+const IMGBB_API_KEY       = '6780eda0bc286893944a108a8d4fdd84';
+
 // Aura Reading Arrays
 const AURA_NAMES = [
   "Cosmic Indigo", "Feral Lime", "Soft Static Pink", "Golden Sunshine", "Lavender Dream",
@@ -128,6 +131,44 @@ document.addEventListener('DOMContentLoaded', () => {
       updateFrameStyle(styleName);
     });
   });
+
+  // Mobile Hamburger Toggle
+  const burgerBtn = $('nav-burger-btn');
+  const navLinks = document.querySelector('.nav__links');
+  if (burgerBtn && navLinks) {
+    burgerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navLinks.classList.toggle('active');
+    });
+
+    // Close when clicking any link inside
+    navLinks.querySelectorAll('.nav__link').forEach((link) => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+      });
+    });
+
+    // Close when clicking start button or logo
+    const navStartBtn = $('nav-start-btn');
+    if (navStartBtn) {
+      navStartBtn.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+      });
+    }
+    const navHome = $('nav-home');
+    if (navHome) {
+      navHome.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+      });
+    }
+
+    // Close when clicking anywhere outside
+    document.addEventListener('click', (e) => {
+      if (!navLinks.contains(e.target) && !burgerBtn.contains(e.target)) {
+        navLinks.classList.remove('active');
+      }
+    });
+  }
 
   // Check if page was opened via a shared strip QR code
   checkForSharedStrip();
@@ -589,7 +630,25 @@ function captureFrame() {
   else if (currentFilter === 'sepia') filterStr = 'sepia(85%) contrast(90%) saturate(70%) brightness(95%)';
 
   ctx.filter = filterStr;
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // Calculate crop coordinates to mimic object-fit: cover for aspect-ratio 4:3
+  const vWidth = video.videoWidth || 640;
+  const vHeight = video.videoHeight || 480;
+  const targetAspect = 4 / 3;
+  const currentAspect = vWidth / vHeight;
+
+  let sX = 0, sY = 0, sWidth = vWidth, sHeight = vHeight;
+  if (currentAspect > targetAspect) {
+    // Too wide (landscape 16:9), crop horizontally
+    sWidth = vHeight * targetAspect;
+    sX = (vWidth - sWidth) / 2;
+  } else {
+    // Too tall (portrait 9:16 or 3:4), crop vertically
+    sHeight = vWidth / targetAspect;
+    sY = (vHeight - sHeight) / 2;
+  }
+
+  ctx.drawImage(video, sX, sY, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
   ctx.restore();
 
   // Apply manual scanline & film grain overlays to the canvas
@@ -777,6 +836,85 @@ function compositeStrip(ctx, canvas, images, done) {
 }
 
 /* ============================================
+   Boomerang Image Framing Helper
+   ============================================ */
+function frameSingleImage(img, styleName, callback) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  const imgW = 400;
+  const imgH = 300;
+  const border = 16;
+  const brandH = 44;
+  
+  const canvasW = imgW + border * 2; // 432
+  const canvasH = border + imgH + brandH; // 360
+  
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  
+  // 1. Draw frame background according to frame style
+  if (styleName === 'white') {
+    ctx.fillStyle = '#FFFDF8';
+  } else if (styleName === 'cream') {
+    ctx.fillStyle = '#FAF1E4';
+  } else if (styleName === 'pink') {
+    ctx.fillStyle = '#F4C9D3';
+  } else if (styleName === 'blue') {
+    ctx.fillStyle = '#BFD7E8';
+  } else if (styleName === 'rose') {
+    ctx.fillStyle = '#8C2F45';
+  } else if (styleName === 'gradient') {
+    const grad = ctx.createLinearGradient(0, 0, 0, canvasH);
+    grad.addColorStop(0, '#FADCE4');
+    grad.addColorStop(1, '#BFD7E8');
+    ctx.fillStyle = grad;
+  } else if (styleName === 'pattern') {
+    ctx.fillStyle = '#FAF1E4';
+    ctx.fillRect(0, 0, canvasW, canvasH);
+    
+    // Polka dot pattern
+    ctx.fillStyle = '#F4C9D3';
+    const dotRadius = 2.5;
+    const dotSpacing = 16;
+    for (let px = 0; px < canvasW + dotSpacing; px += dotSpacing) {
+      for (let py = 0; py < canvasH + dotSpacing; py += dotSpacing) {
+        ctx.beginPath();
+        const offset = (Math.round(py / dotSpacing) % 2 === 0) ? 0 : dotSpacing / 2;
+        ctx.arc(px + offset, py, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+  
+  if (styleName !== 'pattern') {
+    ctx.fillRect(0, 0, canvasW, canvasH);
+  }
+  
+  // 2. Draw image inside (with a neat rounded border)
+  ctx.save();
+  ctx.beginPath();
+  roundedRect(ctx, border, border, imgW, imgH, 6);
+  ctx.clip();
+  ctx.drawImage(img, border, border, imgW, imgH);
+  ctx.restore();
+  
+  // 3. Draw brand/signature text at the bottom
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  ctx.font = '22px "Parisienne", cursive';
+  ctx.fillStyle = (styleName === 'rose') ? '#FAF1E4' : '#8C2F45';
+  ctx.fillText('Pixie', canvasW / 2 - 12, canvasH - 22);
+  
+  ctx.font = '12px "Quicksand", sans-serif';
+  ctx.fillStyle = (styleName === 'rose') ? '#F4C9D3' : '#E0578B';
+  ctx.fillText('♡', canvasW / 2 + 16, canvasH - 22);
+  
+  callback(canvas.toDataURL('image/jpeg', 0.9));
+}
+
+/* ============================================
    Boomerang Mode GIF Compiler (gifshot)
    ============================================ */
 async function buildBoomerangGif() {
@@ -789,16 +927,36 @@ async function buildBoomerangGif() {
     return;
   }
 
+  setStatus('Framing boomerang frames… 🎨');
+
+  // Load all raw frames as Image objects
+  const images = await Promise.all(capturedFrames.map(src => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = src;
+    });
+  }));
+
+  // Frame each image with currentFrameStyle
+  const framedSequence = await Promise.all(images.map(img => {
+    return new Promise((resolve) => {
+      frameSingleImage(img, currentFrameStyle, resolve);
+    });
+  }));
+
   // Construct the forward-and-reverse boomerang frames array
-  const forwardFrames = [...capturedFrames];
-  const reverseFrames = [...capturedFrames].reverse().slice(1, -1); // omit end dupes
+  const forwardFrames = [...framedSequence];
+  const reverseFrames = [...framedSequence].reverse().slice(1, -1); // omit end dupes
   const finalSequence = forwardFrames.concat(reverseFrames);
+
+  setStatus('Stitching looping GIF… 🎞️');
 
   // Compile animated GIF using gifshot
   gifshot.createGIF({
     images: finalSequence,
-    gifWidth: 400,
-    gifHeight: 300,
+    gifWidth: 432,
+    gifHeight: 360,
     interval: 0.1, // seconds
     numFrames: finalSequence.length,
   }, function(obj) {
@@ -1364,56 +1522,45 @@ function downloadPhotoStrip() {
 }
 
 /* ============================================
-   QR Share — Compress image to URL-safe base64url
-   (targeting ~400 chars so QR stays Version 12 or
-   below = easily scannable at 200px display size)
+   Cloud Upload — Upload captured photo to ImgBB
    ============================================ */
-function getTinyQRCodeDataUrl(inputSource, callback) {
-  const img = new Image();
-  img.onload = () => {
-    try {
-      // Start very small — 30px wide strip thumbnail
-      let targetW = 30;
-      let targetH = Math.round(targetW * (img.height / img.width));
+async function uploadToCloud(dataUrl) {
+  if (!IMGBB_API_KEY || IMGBB_API_KEY === 'YOUR_IMGBB_API_KEY_HERE') {
+    console.error('ImgBB API key is not configured.');
+    return null;
+  }
 
-      const tempCanvas = document.createElement('canvas');
-      const tempCtx = tempCanvas.getContext('2d');
+  try {
+    // Remove the data URI prefix if it exists to get the raw base64 data
+    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
 
-      let quality = 0.12;
-      let dataUrl = '';
+    const formData = new FormData();
+    formData.append('key', IMGBB_API_KEY);
+    formData.append('image', base64Data);
 
-      // Loop: get under 500 chars so the final share URL stays scannable
-      for (let attempt = 0; attempt < 8; attempt++) {
-        tempCanvas.width  = targetW;
-        tempCanvas.height = targetH;
-        tempCtx.drawImage(img, 0, 0, targetW, targetH);
-        try {
-          dataUrl = tempCanvas.toDataURL('image/jpeg', quality);
-        } catch (e) {
-          console.error('Tainted canvas in QR compress:', e);
-          callback('');
-          return;
-        }
-        // data URL prefix 'data:image/jpeg;base64,' is 23 chars — strip it
-        const b64len = dataUrl.length - 23;
-        if (b64len <= 500) break;
+    const response = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST',
+      body: formData
+    });
 
-        targetW  = Math.max(18, Math.round(targetW  * 0.75));
-        targetH  = Math.max(18, Math.round(targetH  * 0.75));
-        quality  = Math.max(0.04, quality - 0.015);
-      }
-
-      callback(dataUrl);
-    } catch (err) {
-      console.error('Error in getTinyQRCodeDataUrl:', err);
-      callback('');
+    if (!response.ok) {
+      throw new Error(`Server returned status ${response.status}`);
     }
-  };
-  img.onerror = (err) => {
-    console.error('Image load failed in getTinyQRCodeDataUrl:', err);
-    callback('');
-  };
-  img.src = inputSource;
+
+    const result = await response.json();
+    console.log('ImgBB Response Object:', result);
+
+    if (result && result.success && result.data && result.data.url) {
+      console.log('Upload to ImgBB successful. Direct URL:', result.data.url);
+      return result.data.url;
+    } else {
+      const errMsg = result && result.error ? result.error.message : 'Unknown error';
+      throw new Error(errMsg);
+    }
+  } catch (err) {
+    console.error('ImgBB upload failed:', err);
+    return null;
+  }
 }
 
 /* ============================================
@@ -1421,12 +1568,12 @@ function getTinyQRCodeDataUrl(inputSource, callback) {
    http(s):// URL containing the strip in the
    URL hash so any phone camera can open it.
    ============================================ */
-function openShareQRModal() {
+async function openShareQRModal() {
   const container = $('qr-code-container');
   const modal     = $('qr-modal');
   if (!container || !modal) return;
 
-  container.innerHTML = '<div style="font-family:var(--ff-body);color:var(--clr-text-dim);font-size:0.85rem;">Generating QR... ⏳</div>';
+  container.innerHTML = '<div style="font-family:var(--ff-body);color:var(--clr-text-dim);font-size:0.85rem;">Uploading to Cloud... ⏳</div>';
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
 
@@ -1437,45 +1584,43 @@ function openShareQRModal() {
     return;
   }
 
-  getTinyQRCodeDataUrl(sourceImg, (tinyDataUrl) => {
-    if (!tinyDataUrl) {
-      container.innerHTML = '<div style="color:var(--clr-rose);font-size:0.85rem;">Failed to compress image.</div>';
+  const cloudUrl = await uploadToCloud(sourceImg);
+  console.log('Returned Cloud Image URL:', cloudUrl);
+
+  if (!cloudUrl) {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    alert('Upload failed, please try again.');
+    return;
+  }
+
+  // --- Build a REAL http(s):// URL using dynamic origin and pathname ---
+  const baseUrl  = window.location.origin + window.location.pathname;
+  const shareUrl = baseUrl + '#strip=' + cloudUrl;
+
+  console.log('Final share link for QR code:', shareUrl);
+
+  container.innerHTML = '';
+
+  try {
+    if (typeof QRCode === 'undefined') {
+      container.innerHTML = '<div style="color:var(--clr-rose);">QR library failed to load.</div>';
       return;
     }
 
-    // --- Build a REAL http(s):// URL ---
-    // Convert base64 → base64url (URL-safe: no +  /  = that need %XX escaping)
-    const b64    = tinyDataUrl.split(',')[1]; // drop 'data:image/jpeg;base64,'
-    const b64url = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-    const baseUrl  = window.location.href.split('#')[0];
-    const shareUrl = baseUrl + '#strip=' + b64url;
-
-    console.log('QR share URL length:', shareUrl.length, '| b64 length:', b64url.length);
-
-    container.innerHTML = '';
-
-    try {
-      if (typeof QRCode === 'undefined') {
-        container.innerHTML = '<div style="color:var(--clr-rose);">QR library failed to load.</div>';
-        return;
-      }
-
-      // 200×200 display — gives ~3.5 px/module at Version 12, very scannable
-      new QRCode(container, {
-        text         : shareUrl,
-        width        : 200,
-        height       : 200,
-        colorDark    : '#8C2F45',
-        colorLight   : '#FFFDF8',
-        correctLevel : QRCode.CorrectLevel.L
-      });
-      console.log('QR Code generated ✓  share URL length:', shareUrl.length);
-    } catch (err) {
-      console.error('QR Code generation failed:', err);
-      container.innerHTML = '<div style="color:var(--clr-rose);font-size:0.8rem;">QR rendering error: ' + err.message + '</div>';
-    }
-  });
+    new QRCode(container, {
+      text         : shareUrl,
+      width        : 200,
+      height       : 200,
+      colorDark    : '#8C2F45',
+      colorLight   : '#FFFDF8',
+      correctLevel : QRCode.CorrectLevel.L
+    });
+    console.log('QR Code generated ✓  share URL length:', shareUrl.length);
+  } catch (err) {
+    console.error('QR Code generation failed:', err);
+    container.innerHTML = '<div style="color:var(--clr-rose);font-size:0.8rem;">QR rendering error: ' + err.message + '</div>';
+  }
 }
 
 function closeShareQRModal() {
@@ -1495,29 +1640,35 @@ function closeShareQRModal() {
 function checkForSharedStrip() {
   if (!window.location.hash.startsWith('#strip=')) return;
 
-  const b64url = window.location.hash.slice(7); // drop '#strip='
-  if (!b64url) return;
-
-  // Convert base64url back to standard base64
-  let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-  // Re-add padding '=' stripped during encoding
-  const pad = b64.length % 4;
-  if (pad === 2) b64 += '==';
-  else if (pad === 3) b64 += '=';
-
-  const dataUrl = 'data:image/jpeg;base64,' + b64;
+  const hashVal = window.location.hash.slice(7); // drop '#strip='
+  if (!hashVal) return;
 
   // Remove hash from URL bar (no reload, no history entry)
   history.replaceState(null, '', window.location.pathname);
 
-  // Show the received strip in a cozy overlay
-  showSharedStripModal(dataUrl);
+  if (hashVal.startsWith('http://') || hashVal.startsWith('https://')) {
+    // Load direct image URL
+    showSharedStripModal(hashVal);
+  } else {
+    // Convert base64url back to standard base64 (backward compatibility)
+    let b64 = hashVal.replace(/-/g, '+').replace(/_/g, '/');
+    // Re-add padding '=' stripped during encoding
+    const pad = b64.length % 4;
+    if (pad === 2) b64 += '==';
+    else if (pad === 3) b64 += '=';
+
+    const dataUrl = 'data:image/jpeg;base64,' + b64;
+    showSharedStripModal(dataUrl);
+  }
 }
 
-function showSharedStripModal(dataUrl) {
+function showSharedStripModal(dataUrl, title = 'Received a Pixie!') {
   const modal = $('shared-strip-modal');
   const img   = $('shared-strip-img');
   if (!modal || !img) return;
+
+  const titleEl = modal.querySelector('.modal-title');
+  if (titleEl) titleEl.textContent = title;
 
   img.src = dataUrl;
   modal.classList.add('active');
@@ -1536,11 +1687,27 @@ function showSharedStripModal(dataUrl) {
   if (closeBtn)  closeBtn.onclick  = closeModal;
   if (overlay)   overlay.onclick   = closeModal;
   if (saveBtn) {
-    saveBtn.onclick = () => {
-      const a = document.createElement('a');
-      a.href     = dataUrl;
-      a.download = 'pixie_shared_strip.jpg';
-      a.click();
+    saveBtn.onclick = async () => {
+      if (dataUrl.startsWith('http://') || dataUrl.startsWith('https://')) {
+        try {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const localUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href     = localUrl;
+          a.download = 'pixie_shared_strip.png';
+          a.click();
+          URL.revokeObjectURL(localUrl);
+        } catch (err) {
+          console.warn('Direct fetch download failed (CORS), opening in new tab:', err);
+          window.open(dataUrl, '_blank');
+        }
+      } else {
+        const a = document.createElement('a');
+        a.href     = dataUrl;
+        a.download = 'pixie_shared_strip.png';
+        a.click();
+      }
     };
   }
 }
@@ -1764,10 +1931,14 @@ function saveMemoryToLocalStorage(type, dataUrl) {
 function updateActiveMemoryInLocalStorage() {
   if (!activeMemoryId) return;
 
-  // We can only update decorated strip canvas images
-  if (boothMode !== 'strip') return;
+  let dataUrl = '';
+  if (boothMode === 'strip') {
+    dataUrl = getBakedStripDataUrl();
+  } else {
+    const previewImg = $('gif-preview');
+    if (previewImg) dataUrl = previewImg.src;
+  }
 
-  const dataUrl = getBakedStripDataUrl();
   if (!dataUrl) return;
 
   let memories = [];
@@ -1854,6 +2025,11 @@ function renderMemoryWall() {
       <span class="wall__date">${m.date}</span>
       <span class="wall__type-badge">${badgeLabel}</span>
     `;
+
+    // Bind click to open memory in viewer modal
+    item.addEventListener('click', () => {
+      showSharedStripModal(m.dataUrl, 'Your Memory');
+    });
 
     // Bind delete click
     const delBtn = item.querySelector('.wall__delete-btn');
@@ -1989,17 +2165,78 @@ function updateFrameStyle(styleName) {
   currentFrameStyle = styleName;
   const stripCanvas = $('strip-canvas');
   const ctx = stripCanvas.getContext('2d');
-  if (stripCanvas && currentLoadedImages.length > 0) {
-    compositeStrip(ctx, stripCanvas, currentLoadedImages, () => {
-      // Re-draw the doodles since compositeStrip redraws the clean strip
-      const doodleCanvas = $('doodle-canvas');
-      if (doodleCanvas) {
-        // Redrawing is not needed because doodleCanvas is overlaid on top of stripCanvas!
-        // We only need to trigger save to localStorage so it gets updated
-        updateActiveMemoryInLocalStorage();
-      }
-    });
+  
+  if (boothMode === 'strip') {
+    if (stripCanvas && currentLoadedImages.length > 0) {
+      compositeStrip(ctx, stripCanvas, currentLoadedImages, () => {
+        // Re-draw the doodles since compositeStrip redraws the clean strip
+        const doodleCanvas = $('doodle-canvas');
+        if (doodleCanvas) {
+          // Redrawing is not needed because doodleCanvas is overlaid on top of stripCanvas!
+          // We only need to trigger save to localStorage so it gets updated
+          updateActiveMemoryInLocalStorage();
+        }
+      });
+    }
+  } else {
+    // Boomerang Mode: rebuild the GIF in the background
+    const previewImg = $('gif-preview');
+    if (previewImg && capturedFrames.length > 0) {
+      rebuildBoomerangGifWithFrame(styleName);
+    }
   }
+}
+
+async function rebuildBoomerangGifWithFrame(styleName) {
+  if (typeof gifshot === 'undefined') return;
+
+  // Load all raw frames as Image objects
+  const images = await Promise.all(capturedFrames.map(src => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = src;
+    });
+  }));
+
+  // Frame each image with the selected style
+  const framedSequence = await Promise.all(images.map(img => {
+    return new Promise((resolve) => {
+      frameSingleImage(img, styleName, resolve);
+    });
+  }));
+
+  const forwardFrames = [...framedSequence];
+  const reverseFrames = [...framedSequence].reverse().slice(1, -1);
+  const finalSequence = forwardFrames.concat(reverseFrames);
+
+  gifshot.createGIF({
+    images: finalSequence,
+    gifWidth: 432,
+    gifHeight: 360,
+    interval: 0.1,
+    numFrames: finalSequence.length,
+  }, function(obj) {
+    if (!obj.error) {
+      const gifUrl = obj.image;
+      
+      const previewImg = $('gif-preview');
+      if (previewImg) previewImg.src = gifUrl;
+
+      const downloadGifBtn = $('download-gif-btn');
+      if (downloadGifBtn) {
+        downloadGifBtn.onclick = () => {
+          const a = document.createElement('a');
+          a.href = gifUrl;
+          a.download = `pixie_boomerang_${Date.now()}.gif`;
+          a.click();
+        };
+      }
+
+      // Update memory in localStorage with the newly styled GIF
+      updateActiveMemoryInLocalStorage();
+    }
+  });
 }
 
 function updateProgressDotsCount(count) {
