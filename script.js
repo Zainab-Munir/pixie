@@ -1333,26 +1333,44 @@ function initDoodles() {
     }
   }
 
-  doodleCanvas.addEventListener('mousedown', startDraw);
-  doodleCanvas.addEventListener('mousemove', draw);
+  function isTouchInsideCanvas(e) {
+    if (!e.touches || e.touches.length === 0) return false;
+    const touch = e.touches[0];
+    const rect = doodleCanvas.getBoundingClientRect();
+    return (
+      touch.clientX >= rect.left &&
+      touch.clientX <= rect.right &&
+      touch.clientY >= rect.top &&
+      touch.clientY <= rect.bottom
+    );
+  }
+
+  doodleCanvas.addEventListener('mousedown', (e) => {
+    if (doodleMode) startDraw(e);
+  });
+  doodleCanvas.addEventListener('mousemove', (e) => {
+    if (doodleMode && isDrawing) draw(e);
+  });
   doodleCanvas.addEventListener('mouseup', stopDraw);
   doodleCanvas.addEventListener('mouseout', stopDraw);
+  doodleCanvas.addEventListener('mouseleave', stopDraw);
 
   doodleCanvas.addEventListener('touchstart', (e) => {
-    if (doodleMode) {
+    if (doodleMode && isTouchInsideCanvas(e)) {
       e.preventDefault();
       startDraw(e);
     }
   }, { passive: false });
   
   doodleCanvas.addEventListener('touchmove', (e) => {
-    if (doodleMode) {
+    if (doodleMode && isDrawing && isTouchInsideCanvas(e)) {
       e.preventDefault();
       draw(e);
     }
   }, { passive: false });
 
   doodleCanvas.addEventListener('touchend', stopDraw);
+  doodleCanvas.addEventListener('touchcancel', stopDraw);
 
   // Undo button trigger
   const undoBtn = $('doodle-undo-btn');
@@ -1576,6 +1594,7 @@ async function openShareQRModal() {
   container.innerHTML = '<div style="font-family:var(--ff-body);color:var(--clr-text-dim);font-size:0.85rem;">Uploading to Cloud... ⏳</div>';
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
 
   const sourceImg = (boothMode === 'strip') ? getBakedStripDataUrl() : (capturedFrames[0] || '');
 
@@ -1590,6 +1609,7 @@ async function openShareQRModal() {
   if (!cloudUrl) {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
     alert('Upload failed, please try again.');
     return;
   }
@@ -1628,6 +1648,7 @@ function closeShareQRModal() {
   if (modal) {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
   }
 }
 
@@ -1673,6 +1694,7 @@ function showSharedStripModal(dataUrl, title = 'Received a Pixie!') {
   img.src = dataUrl;
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
 
   // Wire close button (safe to do multiple times)
   const closeBtn   = $('shared-strip-close');
@@ -1682,6 +1704,7 @@ function showSharedStripModal(dataUrl, title = 'Received a Pixie!') {
   const closeModal = () => {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
   };
 
   if (closeBtn)  closeBtn.onclick  = closeModal;
